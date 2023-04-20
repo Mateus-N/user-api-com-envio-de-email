@@ -1,0 +1,49 @@
+version: '3.4'
+
+volumes:
+  datausuarios:
+
+services:
+  dbusuarios:
+    image: mysql:8.0.22
+    ports:
+      - "3308:3306"
+    volumes:
+      - datausuarios:/var/lib/mysql
+      - "~/sql-scripts/setup.sql:/docker-entrypoint-initdb.d/1.sql"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: usuariodb
+    networks:
+      - usuarios-rede
+
+  usuariosapi:
+    build:
+      context: ./UsuariosApi
+      dockerfile: Dockerfile
+    depends_on:
+      - dbusuarios
+      - emailapp
+    ports:
+      - "8080:80"
+    restart: always
+    environment: 
+      - ASPNETCORE_ENVIRONMENT=Production
+    networks:
+      - usuarios-rede
+  
+  emailapp:
+    build:
+      context: ./EmailApp
+      dockerfile: Dockerfile
+    ports:
+      - "9000:80"
+    restart: always
+    networks:
+      - usuarios-rede
+
+networks:  
+  usuarios-rede:
+    driver:
+      bridge
